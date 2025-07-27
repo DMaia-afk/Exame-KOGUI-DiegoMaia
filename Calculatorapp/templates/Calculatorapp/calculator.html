@@ -1,0 +1,389 @@
+{% extends 'Calculatorapp/base.html' %}
+{% block title %}Calculadora Avançada{% endblock %}
+{% block content %}
+<style>
+    /* Fundo gradiente da página */
+    body {
+        background: radial-gradient(circle at 50% 30%, #3a185a 0%, #1a0936 100%) !important;
+    }
+    /* Container principal da calculadora e histórico */
+    .calc-container {
+        display: flex;
+        justify-content: center;
+        align-items: stretch;
+        gap: 24px;
+        height: 100%;
+        min-height: 0;
+        margin: 0;
+    }
+    /* Painel da calculadora */
+    .calculator {
+        background: #231942;
+        border-radius: 16px;
+        padding: 16px 24px 16px 24px;
+        box-shadow: 0 4px 32px #0005;
+        width: 100%;
+        max-width: 480px;
+        height: 75%;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+    /* Display do resultado e expressão */
+    .display {
+        background: #18122b;
+        color: #fff;
+        font-size: 1.15rem;
+        border-radius: 8px;
+        padding: 6px 8px;
+        text-align: right;
+        margin-bottom: 4px;
+        min-height: 22px;
+        letter-spacing: 1px;
+        word-break: break-all;
+    }
+    /* Teclado numérico e de operações */
+    .keypad {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .keypad button {
+        font-size: 1rem;
+        padding: 12px 0;
+        border: none;
+        border-radius: 8px;
+        background: #2d254d;
+        color: #fff;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-weight: 500;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    /* Botões de operação */
+    .keypad button.op {
+        background: #a259f7;
+        color: #fff;
+    }
+    .keypad button.op:active, .keypad button.op:focus {
+        background: #7c2ae8;
+    }
+    /* Botão de igual */
+    .keypad button.equal {
+        background: linear-gradient(161deg,rgba(131, 58, 180, 1) 0%, rgba(119, 29, 253, 1) 50%, rgba(209, 69, 252, 1) 100%);
+        color: #fff;
+        font-weight: bold;
+    }
+    /* Botão de limpar */
+    .keypad button.clear {
+        background: #e74c3c;
+        color: #fff;
+    }
+    .keypad button.clear:active, .keypad button.clear:focus {
+        background: #c0392b;
+    }
+    /* Painel de histórico */
+    .history-panel {
+        background: #231942;
+        border-radius: 16px;
+        padding: 10px 14px;
+        width: 320px;
+        min-height: 0;
+        height: 80%;
+        box-shadow: 0 4px 32px #0005;
+        color: #fff;
+    }
+    .history-panel h3 {
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .history-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 340px;
+        overflow-y: auto;
+    }
+    .history-list li {
+        background: #18122b;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        padding: 14px 16px 8px 16px;
+        font-size: 1.1rem;
+        color: #fff;
+        box-shadow: 0 2px 8px #0002;
+    }
+    .history-list li small {
+        color: #b3b3b3;
+        font-size: 0.9rem;
+        display: block;
+        margin-top: 2px;
+    }
+    /* Responsividade */
+    @media (max-width: 900px) {
+        .calc-container { flex-direction: column; align-items: stretch; height: auto; }
+        .history-panel { width: 100%; margin-top: 12px; height: 180px; }
+        .calculator {
+            width: 100%;
+            max-width: 100vw;
+            height: 220px;
+            min-width: 0;
+            padding: 8px 4px 8px 4px;
+            box-sizing: border-box;
+        }
+        .keypad {
+            gap: 2px;
+        }
+        .keypad button {
+            font-size: 0.95rem;
+            padding: 8px 0;
+        }
+    }
+    @media (max-width: 600px) {
+        .calculator {
+            width: 100%;
+            min-width: 0;
+            max-width: 100vw;
+            padding: 4px 2px 4px 2px;
+            box-sizing: border-box;
+            height: 160px;
+        }
+        .keypad {
+            gap: 1px;
+        }
+        .keypad button {
+            font-size: 0.85rem;
+            padding: 6px 0;
+        }
+        .display {
+            font-size: 0.95rem;
+            padding: 3px 2px;
+        }
+    }
+    /* Header com logout */
+    .calc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #3a185a;
+    }
+    .calc-header h1 {
+        margin: 0;
+        color: #a259f7;
+        font-size: 1.5rem;
+    }
+    .logout-btn {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .logout-btn:hover {
+        background: #c0392b;
+        text-decoration: none;
+        color: white;
+    }
+</style>
+<div class="calc-header">
+    <h1>Calculadora Avançada</h1>
+    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn">Sair</button>
+    </form>
+</div>
+<p style="text-align:center; color:#d1b3ff; margin-top:0;">Calculadora com histórico de operações</p>
+<div class="calc-container">
+    <!-- Painel da calculadora -->
+    <div class="calculator">
+        <form id="calc-form" method="post" autocomplete="off">
+            {% csrf_token %}
+            <!-- Inputs hidden para integração com backend Django -->
+            <input type="hidden" name="a" id="input-a">
+            <input type="hidden" name="b" id="input-b">
+            <input type="hidden" name="operacao" id="input-operacao">
+            <!-- Display do resultado e expressão -->
+            <div class="display" id="display">
+                <span id="display-valor">
+                    {% if resultado_display is not None %}
+                        {{ resultado_display }}
+                    {% elif erro %}
+                        <span style="color:#e74c3c;">{{ erro }}</span>
+                    {% else %}
+                        0
+                    {% endif %}
+                </span>
+                <div id="display-expressao" style="font-size:0.95rem;color:#b3b3b3;word-break:break-all;"></div>
+            </div>
+            <!-- Teclado numérico e de operações -->
+            <div class="keypad">
+                <button type="button" class="clear">C</button>
+                <button type="button" class="negativo">±</button>
+                <button type="button" class="porcentagem">%</button>
+                <button type="button" class="op" data-op="divisao">÷</button>
+                <button type="button" class="num" data-num="7">7</button>
+                <button type="button" class="num" data-num="8">8</button>
+                <button type="button" class="num" data-num="9">9</button>
+                <button type="button" class="op" data-op="multiplicacao">×</button>
+                <button type="button" class="num" data-num="4">4</button>
+                <button type="button" class="num" data-num="5">5</button>
+                <button type="button" class="num" data-num="6">6</button>
+                <button type="button" class="op" data-op="subtracao">-</button>
+                <button type="button" class="num" data-num="1">1</button>
+                <button type="button" class="num" data-num="2">2</button>
+                <button type="button" class="num" data-num="3">3</button>
+                <button type="button" class="op" data-op="soma">+</button>
+                <button type="button" class="num" data-num="0" style="grid-column: span 2;">0</button>
+                <button type="button" class="num" data-num=".">.</button>
+                <button type="button" class="equal">=</button>
+            </div>
+        </form>
+    </div>
+    <!-- Painel de histórico -->
+    <div class="history-panel">
+        <h3>Histórico</h3>
+        <ul class="history-list">
+            {% for op in operacoes %}
+                <li>
+                    {{ op.parametros }}<br>
+                    = <strong>{{ op.resultado }}</strong>
+                    <small class="dt-local" data-dt="{{ op.dt_inclusao|date:'c' }}"></small>
+                </li>
+            {% empty %}
+                <li>Nenhuma operação realizada ainda.</li>
+            {% endfor %}
+        </ul>
+        <!-- Botão para limpar histórico -->
+        <form method="post" action="{% url 'limpar_historico' %}" style="margin-top: 18px; text-align: right;">
+            {% csrf_token %}
+            <button type="submit" style="background: #e74c3c; color: #fff; border: none; border-radius: 6px; padding: 8px 18px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background 0.2s;">Limpar Histórico</button>
+        </form>
+    </div>
+</div>
+<script>
+    // Expressão matemática montada pelos botões
+    let expressao = '';
+    const displayExpressao = document.getElementById('display-expressao');
+    const displayValor = document.getElementById('display-valor');
+    
+
+    
+    // Atualiza o display da expressão
+    function atualizarDisplayExpressao() {
+        displayExpressao.textContent = expressao || '';
+    }
+    // Atualiza o display do resultado
+    function atualizarDisplayValor(valor) {
+        if (displayValor) displayValor.textContent = valor;
+    }
+    atualizarDisplayExpressao();
+    const form = document.getElementById('calc-form');
+    const inputA = document.getElementById('input-a');
+    const inputB = document.getElementById('input-b');
+    const inputOperacao = document.getElementById('input-operacao');
+
+    // Adiciona número à expressão
+    document.querySelectorAll('.num').forEach(btn => {
+        btn.addEventListener('click', function() {
+            expressao += this.dataset.num;
+            atualizarDisplayExpressao();
+        });
+    });
+    // Adiciona operador à expressão
+    document.querySelectorAll('.op').forEach(btn => {
+        btn.addEventListener('click', function() {
+            let op = this.textContent;
+            // Só adiciona operador se o último caractere for número ou parêntese
+            if (expressao.length > 0 && /[0-9)]$/.test(expressao)) {
+                expressao += op;
+            } else if (expressao.length > 0 && /[+\-*/]$/.test(expressao)) {
+                expressao = expressao.slice(0, -1) + op;
+            }
+            atualizarDisplayExpressao();
+        });
+    });
+    // Limpa a expressão e o display
+    document.querySelector('.clear').addEventListener('click', function() {
+        expressao = '';
+        atualizarDisplayExpressao();
+        atualizarDisplayValor('0');
+    });
+    // Envia a expressão para o backend ao clicar em =
+    document.querySelector('.equal').addEventListener('click', function() {
+        if (expressao) {
+            // Corrige operadores unicode para Python
+            let expCorrigida = expressao.replace(/×/g, '*').replace(/÷/g, '/');
+            document.getElementById('input-a').value = '';
+            document.getElementById('input-b').value = '';
+            document.getElementById('input-operacao').value = '';
+            // Cria um campo hidden para enviar a expressão
+            let expInput = document.getElementById('input-expressao');
+            if (!expInput) {
+                expInput = document.createElement('input');
+                expInput.type = 'hidden';
+                expInput.name = 'expressao';
+                expInput.id = 'input-expressao';
+                form.appendChild(expInput);
+            }
+            expInput.value = expCorrigida;
+            form.submit();
+        }
+    });
+    
+
+    // Inverte o sinal do último número na expressão
+    document.querySelector('.negativo').addEventListener('click', function() {
+        let match = expressao.match(/(\-?\d+\.?\d*)$/);
+        if (match) {
+            let num = match[1];
+            let start = expressao.length - num.length;
+            if (num.startsWith('-')) {
+                expressao = expressao.slice(0, start) + num.substring(1);
+            } else {
+                expressao = expressao.slice(0, start) + '-' + num;
+            }
+            atualizarDisplayExpressao();
+        }
+    });
+    // Aplica % ao último número da expressão
+    document.querySelector('.porcentagem').addEventListener('click', function() {
+        let match = expressao.match(/(\d+\.?\d*)$/);
+        if (match) {
+            let num = parseFloat(match[1]);
+            let perc = (num / 100).toString();
+            expressao = expressao.replace(/(\d+\.?\d*)$/, perc);
+            atualizarDisplayExpressao();
+        }
+    });
+</script>
+<script>
+    // Converte todos os horários do histórico para o horário local do navegador
+    document.querySelectorAll('.dt-local').forEach(function(el) {
+        const dtIso = el.getAttribute('data-dt');
+        if (dtIso) {
+            const d = new Date(dtIso);
+            if (!isNaN(d)) {
+                // Exibe no formato HH:mm (24h)
+                el.textContent = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+        }
+    });
+</script>
+<!-- Não resetamos mais o display após o cálculo, para manter o resultado visível -->
+{% endblock %}
